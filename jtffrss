@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table xmlns="http://query.yahooapis.com/v1/schema/table.xsd">
+  <meta>
+    <sampleQuery>select * from {table}
+</sampleQuery>
+  </meta>
+  <bindings>
+    <select itemPath="" produces="XML">
+      <urls>
+        <url></url>
+      </urls>
+      <inputs>
+          <key id="content" type="xs:string" paramType="variable" required="false"/>
+      </inputs>
+      <execute><![CDATA[ 
+        var results = y.query("use 'https://raw.githubusercontent.com/yql/yql-tables/master/data/data.headers.xml' as data.headers; select content from data.headers where url='http://japtem.com/fanfic.php?action=last_updated' limit 1").results.resources.content;
+        var regexM = /Viewing as Guest([\s\S]+?)\<\/div\>/g
+		    var parsedM = regexM.exec(results);
+  		  var regexS = /<br \/>\n([\s\S]+?): ([\s\S]+?) by ([\s\S]+?): <a href="([\s\S]+?)">([\s\S]+?)<\/a>/g
+
+        var feedroot = <rss version="2.0">
+          <channel>
+          <title>Japtem FanFic Updates</title>
+          </channel>
+        </rss>;
+        
+        var match = null;
+        while (match = regexS.exec(parsedM[1])) {
+          feedroot.channel.appendChild(<item>
+            <date>{match[1]}</date>
+            <series>{match[2]}</series>
+            <release>{match[5]}</release>
+            <author>{match[3]}</author>
+            <url>{match[4]}</url>
+          </item>);            
+        }
+
+        response.object = feedroot;
+      ]]></execute>
+    </select>
+  </bindings>
+</table>
